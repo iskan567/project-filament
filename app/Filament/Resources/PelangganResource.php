@@ -12,6 +12,8 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Blade;
 
 class PelangganResource extends Resource
 {
@@ -24,7 +26,7 @@ class PelangganResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('nama')->require(),
+                Forms\Components\TextInput::make('nama')->required(),
                 Forms\Components\TextInput::make('no_hp')->label('Nomor Handphone'),
                 Forms\Components\TextInput::make('alamat'),
             ]);
@@ -44,6 +46,17 @@ class PelangganResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+                Tables\Actions\Action::make('pdf')
+                    ->label('PDF')
+                    ->color('success')
+                    ->icon('heroicon-o-document-text')
+                    ->action(function (Pelanggan $record) {
+                        return response()->streamDownload(function () use ($record) {
+                            echo Pdf::loadHtml(
+                                Blade::render('pelanggan', ['record' => $record])
+                            )->stream();
+                        }, $record->nama . '.pdf');
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
